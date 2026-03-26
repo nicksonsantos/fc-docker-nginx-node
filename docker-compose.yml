@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: fc_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: fullcycle
+      MYSQL_USER: fullcycle
+      MYSQL_PASSWORD: fullcycle
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - fc-network
+
+  node:
+    build:
+      context: ./node
+    container_name: fc_node
+    restart: always
+    depends_on:
+      - mysql
+    environment:
+      DB_HOST: mysql
+      DB_PORT: '3306'
+      DB_USER: fullcycle
+      DB_PASSWORD: fullcycle
+      DB_NAME: fullcycle
+    volumes:
+      - ./node:/usr/src/app
+      - node_modules:/usr/src/app/node_modules
+    networks:
+      - fc-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: fc_nginx
+    restart: always
+    depends_on:
+      - node
+    ports:
+      - '8080:80'
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - fc-network
+
+volumes:
+  db_data:
+  node_modules:
+
+networks:
+  fc-network:
+    driver: bridge
